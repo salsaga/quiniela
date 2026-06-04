@@ -13,9 +13,6 @@
        href="{% url 'stage' tab.stage.key %}">
         {{ tab.stage.short_name }}
     </a>
-    {% if tab.state == 'sent' %}
-        <span class="tab-done" title="Enviado">✓</span>
-        {% endif %}
     {% endfor %}
 </nav>
 
