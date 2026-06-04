@@ -7,6 +7,10 @@ __pycache__/
 
 # Base de datos SQLite
 db/app.db
+db/*.sqlite3
+
+# Archivos estáticos recolectados (collectstatic)
+staticfiles/
 
 # Entornos virtuales (si tienes uno)
 venv/

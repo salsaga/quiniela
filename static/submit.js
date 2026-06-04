@@ -1,5 +1,24 @@
 const savingOverlay = document.getElementById("saving-overlay");
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                cookieValue = decodeURIComponent(
+                    cookie.substring(name.length + 1)
+                );
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie("csrftoken");
+
 function buildPredictions(){
     const matches = document.querySelectorAll(".match");
 
@@ -27,10 +46,11 @@ async function savePredictions() {
     const predictions = buildPredictions();
 
     try {
-        const response = await fetch("/save_predictions", {
+        const response = await fetch("/save_predictions/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
             },
             body: JSON.stringify({predictions})
         })
@@ -65,10 +85,11 @@ function sendPredictions() {
         return;
     }
 
-    fetch("/submit_predictions", {
+    fetch("/submit_predictions/", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken
         },
         body: JSON.stringify({predictions})
     })

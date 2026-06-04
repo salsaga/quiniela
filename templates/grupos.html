@@ -9,7 +9,7 @@
 
 
 <main class="content">
-    {% for group, matches in groups.items() %}
+    {% for group, matches in groups.items %}
 
     <details class="group">
         <summary class="group-summary">
@@ -18,35 +18,35 @@
                 <path d="M9 7 L17 12 L9 17"/>
             </svg>
         </span>
-            Grupo {{group}}
+            Grupo {{ group }}
         </summary>
 
         {% for match in matches %}
         <section class="match-card mx-2">
-            <div class="match" data-match-id="{{match.id}}">
+            <div class="match" data-match-id="{{ match.id }}">
                 <div class="team">
-                    <span>{{match.team_a.name}}</span>
-                    <img src="https://flagcdn.com/w80/{{match.team_a.flag}}.png">
+                    <span>{{ match.team_a.name }}</span>
+                    <img src="https://flagcdn.com/w80/{{ match.team_a.flag }}.png">
                 </div>
 
                 <div class="score">
-                    <input type="number" min="0" step="1" data-field="goals_a" value="{{match.predicted_a}}">
+                    <input type="number" min="0" step="1" data-field="goals_a" value="{{ match.predicted_a }}">
                     <span>-</span>
-                    <input type="number" min="0" step="1" data-field="goals_b" value="{{match.predicted_b}}">
+                    <input type="number" min="0" step="1" data-field="goals_b" value="{{ match.predicted_b }}">
                 </div>
 
                 <div class="team">
-                    <img src="https://flagcdn.com/w80/{{match.team_b.flag}}.png">
-                    <span>{{match.team_b.name}}</span>
+                    <img src="https://flagcdn.com/w80/{{ match.team_b.flag }}.png">
+                    <span>{{ match.team_b.name }}</span>
                 </div>
             </div>
 
             <div class="divider"></div>
 
             <div class="meta">
-                <span>{{match.formatted_date}}</span>
+                <span>{{ match.formatted_date }}</span>
                 <span class="dot"></span>
-                <span>{{match.stadium}}</span>
+                <span>{{ match.stadium }}</span>
             </div>
         </section>
         {% endfor %}

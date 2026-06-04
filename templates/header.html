@@ -18,8 +18,8 @@
 
 <aside class="user-bar">
     <nav class="user-bar-nav" aria-label="Navegación de usuario">
-        <span class="user-hi">Queonda {{user.name}}!</span>
-        <a class="logout-anchor" href="{{ url_for('auth.logout') }}">Salir
+        <span class="user-hi">Queonda {{ user.first_name }}!</span>
+        <a class="logout-anchor" href="{% url 'logout' %}">Salir
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
