@@ -4,29 +4,25 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from config.get_env import getenv_bool, getenv_db, getenv_int, getenv_list
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("1", "true", "yes", "on")
+DEBUG = getenv_bool("DEBUG", True)
 
-_allowed = os.environ.get("ALLOWED_HOSTS", "")
-if _allowed:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
-elif DEBUG:
-    ALLOWED_HOSTS = ["*"]
-else:
-    ALLOWED_HOSTS = []
+# Sin hosts declarados: comodín solo en local; vacío (cerrado) en prod.
+ALLOWED_HOSTS = getenv_list("ALLOWED_HOSTS", ["*"] if DEBUG else [])
 
 # Nginx termina el TLS y reenvía a gunicorn por HTTP. Sin esto Django
 # cree que la petición es HTTP y el chequeo de Origin del CSRF rechaza
 # los POST (403) cuando el navegador manda Origin https://.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
+CSRF_TRUSTED_ORIGINS = getenv_list("CSRF_TRUSTED_ORIGINS", [])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,24 +66,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-if os.environ.get("POSTGRES_DB"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB"),
-            "USER": os.environ.get("POSTGRES_USER"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db" / "app.sqlite3",
-        }
-    }
+SESSION_COOKIE_SECURE = getenv_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = getenv_bool("CSRF_COOKIE_SECURE", not DEBUG)
+
+DATABASES = {
+    "default": getenv_db(
+        env_pref="POSTGRES",
+        sqlite_path=BASE_DIR / "db" / "app.sqlite3",
+    )
+}
 
 AUTH_USER_MODEL = "pool.User"
 LOGIN_URL = "login"
@@ -118,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Email SMTP configuration (Gmail) from environment.
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("SMTP_SERVER", "")
-EMAIL_PORT = int(os.environ.get("SMTP_PORT", "587"))
+EMAIL_PORT = getenv_int("SMTP_PORT", 587)
 EMAIL_USE_SSL = EMAIL_PORT == 465
 EMAIL_USE_TLS = EMAIL_PORT == 587
 EMAIL_HOST_USER = os.environ.get("GMAIL_USER", "")
