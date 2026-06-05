@@ -20,6 +20,14 @@ elif DEBUG:
 else:
     ALLOWED_HOSTS = []
 
+# Nginx termina el TLS y reenvía a gunicorn por HTTP. Sin esto Django
+# cree que la petición es HTTP y el chequeo de Origin del CSRF rechaza
+# los POST (403) cuando el navegador manda Origin https://.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
