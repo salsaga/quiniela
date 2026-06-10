@@ -2,15 +2,20 @@
 
 Reglas (ver ``templates/reglas.html``, documentadas para los jugadores):
 
-- Acertar ganador o empate: 3 puntos.
-- Acertar también la diferencia de goles (no aplica en empates): +1 punto.
-- Marcador exacto: 5 puntos totales si hubo ganador, 4 si fue empate.
+- Atinar al resultado del partido (ganador o empate): 3 puntos.
+- Atinar también la diferencia de goles: +1 punto. Solo aplica si se
+  atinó al resultado, y nunca en empates.
+- Marcador exacto: +1 punto más (5 totales con ganador, 4 en empate).
 
 En eliminatorias se compara el marcador en tiempo regular/extra
 (``Match.home_goals``/``away_goals``), nunca los penales.
 """
 
 from dataclasses import dataclass
+
+HOME_WINS = "home"
+AWAY_WINS = "away"
+DRAW = "draw"
 
 
 @dataclass(frozen=True)
@@ -25,36 +30,46 @@ class ScoreDetail:
     diff_bonus: bool
 
 
+def _match_result(home_goals: int, away_goals: int) -> str:
+    """Resultado del partido: gana local, gana visitante o empate."""
+    if home_goals > away_goals:
+        return HOME_WINS
+    if home_goals < away_goals:
+        return AWAY_WINS
+    return DRAW
+
+
 def score_detail(
     pred_home: int | None,
     pred_away: int | None,
     actual_home: int | None,
     actual_away: int | None,
 ) -> ScoreDetail | None:
-    """ "sin resultado" no es lo mismo que
-    "cero puntos".
+    """Evalúa un pronóstico contra el marcador real.
+
+    Devuelve ``None`` si falta algún dato: "sin resultado" no es lo
+    mismo que "cero puntos".
     """
     if None in (pred_home, pred_away, actual_home, actual_away):
         return None
 
-    pred_diff = pred_home - pred_away
-    actual_diff = actual_home - actual_away
+    predicted_result = _match_result(pred_home, pred_away)
+    actual_result = _match_result(actual_home, actual_away)
 
-    def _outcome(diff: int) -> int:
-        return 0 if diff == 0 else (1 if diff > 0 else -1)
-
-    if _outcome(pred_diff) != _outcome(actual_diff):
+    if predicted_result != actual_result:
         return ScoreDetail(points=0, exact=False, diff_bonus=False)
 
-    is_draw = actual_diff == 0
-    exact = pred_home == actual_home and pred_away == actual_away
-    if exact:
-        return ScoreDetail(points=4 if is_draw else 5, exact=True,
-                           diff_bonus=False)
+    is_draw = actual_result == DRAW
+    exact_score = (pred_home, pred_away) == (actual_home, actual_away)
+    if exact_score:
+        # El exacto ya incluye la diferencia: 3 + 1 + 1 (o 3 + 1 en empate).
+        points = 4 if is_draw else 5
+        return ScoreDetail(points=points, exact=True, diff_bonus=False)
 
-    diff_bonus = not is_draw and pred_diff == actual_diff
-    return ScoreDetail(points=4 if diff_bonus else 3, exact=False,
-                       diff_bonus=diff_bonus)
+    same_difference = (pred_home - pred_away) == (actual_home - actual_away)
+    diff_bonus = same_difference and not is_draw
+    points = 4 if diff_bonus else 3
+    return ScoreDetail(points=points, exact=False, diff_bonus=diff_bonus)
 
 
 def calculate_points(

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!-- Alternativa A: header actual intacto + subheader de torneo clickeable.
+     Autocontenido para pegar en CodePen (panel HTML completo). -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header A — subheader</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #232732;
+    --text: #e7e7e7;
+    --muted: rgb(180, 180, 180);
+    --gold: #d4af37;
+    --gold-soft: rgba(212, 175, 55, 0.14);
+    --gold-text: #cdb36f;
+    --header-bg: rgba(15, 17, 21, 0.92);
+    --radius-pill: 999px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+  /* Marco de prueba: ancho de un Galaxy S8. */
+  .phone {
+    max-width: 360px;
+    min-height: 60vh;
+    margin: 24px auto;
+    border: 1px dashed #444;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    height: 52px;
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .title {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+  .title::after {
+    content: "";
+    display: block;
+    height: 2px;
+    width: 58%;
+    margin: 2px auto 0;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+  .title span { font-size: 16px; padding-right: 3px; }
+  .header-spacer { width: 32px; }
+  .user-chip {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .user-chip svg { width: 16px; height: 16px; fill: var(--text); }
+
+  /* Subheader: toda la barra es un link a /posiciones/. */
+  .rank-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    background: var(--gold-soft);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .rank-bar:active { background: rgba(212, 175, 55, 0.25); }
+  .rank-bar .pos { color: var(--gold-text); font-weight: 800; }
+  .rank-bar .pts { font-weight: 700; }
+  .rank-bar .hint {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Tabs falsos, solo contexto. */
+  .stage-tabs { display: flex; gap: 8px; padding: 8px 10px; background: var(--header-bg); overflow-x: auto; }
+  .stage-tab {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .stage-tab.active { color: var(--gold-text); background: var(--gold-soft); border-color: rgba(212, 175, 55, 0.5); }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="header">
+    <span class="header-spacer"></span>
+    <h1 class="title"><span>⚽</span>sanginiela</h1>
+    <button class="user-chip">
+      <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z"/></svg>
+    </button>
+  </header>
+
+  <a class="rank-bar" href="#posiciones">
+    <span>🏆</span>
+    <span>Vas <span class="pos">1°</span> con <span class="pts">4 pts</span></span>
+    <span class="hint">posiciones</span>
+  </a>
+
+  <nav class="stage-tabs">
+    <a class="stage-tab" href="#">reglas</a>
+    <a class="stage-tab active" href="#">grupos</a>
+    <a class="stage-tab" href="#">⚽ en juego</a>
+    <a class="stage-tab" href="#">dieciseisavos</a>
+  </nav>
+
+</div>
+</body>
+</html>

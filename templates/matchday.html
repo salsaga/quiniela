@@ -17,39 +17,41 @@
         {% for match in day.matches %}
         <details class="day-match"{% if day.is_today %} open{% endif %}>
             <summary class="day-summary">
-                <span class="day-phase">{{ match.phase_label }}</span>
+                <span class="day-summary-top">
+                    <span class="chevron">
+                        <svg viewBox="0 0 24 24"><path d="M9 7 L17 12 L9 17"/></svg>
+                    </span>
+                    <span class="day-phase">{{ match.phase_label }}</span>
+                    {% if not match.is_finished %}
+                    <span class="day-pending">{{ match.local_time }} hora local · por jugar</span>
+                    {% endif %}
+                </span>
 
                 <div class="day-teams">
-                    <div class="day-team day-team--home">
-                        <span class="day-team-line">
-                            {% if match.home_team %}
-                            <span class="day-team-name">{{ match.home_team.name_es }}</span>
-                            {% if match.home_team.flag_path %}<img src="{% static match.home_team.flag_path %}" alt="{{ match.home_team.name_es }}">{% endif %}
-                            {% else %}
-                            <span class="team-placeholder">{{ match.home_placeholder }}</span>
-                            {% endif %}
-                        </span>
-                        <span class="day-goals">{% if match.is_finished %}{{ match.home_goals }}{% else %}&ndash;{% endif %}</span>
-                    </div>
+                    <span class="day-team-line day-team-line--home">
+                        {% if match.home_team %}
+                        <span class="day-team-name">{{ match.home_team.name_es }}</span>
+                        {% if match.home_team.flag_path %}<img src="{% static match.home_team.flag_path %}" alt="{{ match.home_team.name_es }}">{% endif %}
+                        {% else %}
+                        <span class="team-placeholder">{{ match.home_placeholder }}</span>
+                        {% endif %}
+                    </span>
 
                     <span class="day-vs">vs</span>
 
-                    <div class="day-team day-team--away">
-                        <span class="day-team-line">
-                            {% if match.away_team %}
-                            {% if match.away_team.flag_path %}<img src="{% static match.away_team.flag_path %}" alt="{{ match.away_team.name_es }}">{% endif %}
-                            <span class="day-team-name">{{ match.away_team.name_es }}</span>
-                            {% else %}
-                            <span class="team-placeholder">{{ match.away_placeholder }}</span>
-                            {% endif %}
-                        </span>
-                        <span class="day-goals">{% if match.is_finished %}{{ match.away_goals }}{% else %}&ndash;{% endif %}</span>
-                    </div>
-                </div>
+                    <span class="day-team-line">
+                        {% if match.away_team %}
+                        {% if match.away_team.flag_path %}<img src="{% static match.away_team.flag_path %}" alt="{{ match.away_team.name_es }}">{% endif %}
+                        <span class="day-team-name">{{ match.away_team.name_es }}</span>
+                        {% else %}
+                        <span class="team-placeholder">{{ match.away_placeholder }}</span>
+                        {% endif %}
+                    </span>
 
-                {% if not match.is_finished %}
-                <span class="day-pending">{{ match.local_time }} hora local · por jugar</span>
-                {% endif %}
+                    <span class="day-goals">{% if match.is_finished %}{{ match.home_goals }}{% else %}&ndash;{% endif %}</span>
+                    <span></span>
+                    <span class="day-goals">{% if match.is_finished %}{{ match.away_goals }}{% else %}&ndash;{% endif %}</span>
+                </div>
             </summary>
 
             <div class="day-body">
@@ -88,10 +90,12 @@
                         <b>{{ value }}</b>
                     </div>
                     {% endfor %}
+                    {% if match.points_lines|length > 1 %}
                     <div class="day-points-line day-points-total">
                         <span>Total</span>
                         <span class="result-points result-points--{{ match.points_kind }}">{{ match.user_points }} pts</span>
                     </div>
+                    {% endif %}
                 </div>
                 {% endif %}
 

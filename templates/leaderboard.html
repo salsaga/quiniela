@@ -9,22 +9,22 @@
     <section class="board">
         <header class="board-row board-head" aria-hidden="true">
             <span class="board-pos">#</span>
+            <span class="board-pts">pts</span>
             <span></span>
-            <span class="board-stat" title="Marcadores exactos">🎯</span>
-            <span class="board-stat" title="Diferencias acertadas">±</span>
-            <span class="board-pts" title="Puntos">★</span>
+            <span class="board-stat" title="Marcadores exactos"><svg class="board-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg></span>
+            <span class="board-stat" title="Diferencias acertadas">dif</span>
         </header>
 
         {% for row in rows %}
         <div class="board-row{% if row.user == user %} board-row--me{% endif %}{% if not row.has_played %} board-row--idle{% endif %}">
             <span class="board-pos">{% if row.position == 1 %}🥇{% elif row.position == 2 %}🥈{% elif row.position == 3 %}🥉{% else %}{{ row.position }}{% endif %}</span>
+            <span class="board-pts">{{ row.points }}</span>
             <span class="board-name">
                 {{ row.user.first_name|default:row.user.email }}
                 {% if not row.has_played %}<small class="board-note">sin envío</small>{% endif %}
             </span>
             <span class="board-stat">{{ row.exact }}</span>
             <span class="board-stat">{{ row.diffs }}</span>
-            <span class="board-pts">{{ row.points }}</span>
         </div>
         {% endfor %}
     </section>

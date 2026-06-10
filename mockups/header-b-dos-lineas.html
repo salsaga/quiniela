@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!-- Alternativa B: header de dos líneas — título compacto centrado arriba;
+     abajo rank-chip a la izquierda y usuario + Salir a la derecha (sustituye
+     al user-chip/user-bar). Autocontenido para CodePen. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header B — dos líneas</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #232732;
+    --text: #e7e7e7;
+    --muted: rgb(180, 180, 180);
+    --gold: #d4af37;
+    --gold-soft: rgba(212, 175, 55, 0.14);
+    --gold-text: #cdb36f;
+    --header-bg: rgba(15, 17, 21, 0.92);
+    --radius-pill: 999px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+  .phone {
+    max-width: 360px;
+    min-height: 60vh;
+    margin: 24px auto;
+    border: 1px dashed #444;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 8px 12px 8px;
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .title {
+    margin: 0;
+    text-align: center;
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+  .title::after {
+    content: "";
+    display: block;
+    height: 2px;
+    width: 72px;
+    margin: 1px auto 0;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+  .title span { font-size: 13px; padding-right: 3px; }
+
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .rank-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    background: var(--gold-soft);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .rank-chip:active { background: rgba(212, 175, 55, 0.25); }
+  .rank-chip .pos { color: var(--gold-text); font-weight: 800; }
+  .rank-chip .pts { color: var(--muted); font-size: 12px; }
+
+  .user-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .user-name { color: var(--muted); font-weight: 600; }
+  .logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #8fa8c7;
+    text-decoration: none;
+    font-size: 12px;
+  }
+  .logout svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .stage-tabs { display: flex; gap: 8px; padding: 8px 10px; background: var(--header-bg); overflow-x: auto; }
+  .stage-tab {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .stage-tab.active { color: var(--gold-text); background: var(--gold-soft); border-color: rgba(212, 175, 55, 0.5); }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="header">
+    <h1 class="title"><span>⚽</span>sanginiela</h1>
+    <div class="header-row">
+      <a class="rank-chip" href="#posiciones" title="Tabla de posiciones">
+        <span>🏆</span>
+        <span class="pos">1°</span>
+        <span class="pts">4 pts</span>
+      </a>
+      <span class="user-area">
+        <span class="user-name">Gabo</span>
+        <a class="logout" href="#" onclick="return confirm('¿Cerrar sesión?')">
+          Salir
+          <svg viewBox="0 0 24 24">
+            <path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/>
+            <path d="M10 12h11"/>
+            <path d="M17 7l5 5-5 5"/>
+          </svg>
+        </a>
+      </span>
+    </div>
+  </header>
+
+  <nav class="stage-tabs">
+    <a class="stage-tab" href="#">reglas</a>
+    <a class="stage-tab active" href="#">grupos</a>
+    <a class="stage-tab" href="#">⚽ en juego</a>
+    <a class="stage-tab" href="#">dieciseisavos</a>
+  </nav>
+
+</div>
+</body>
+</html>

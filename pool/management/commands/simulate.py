@@ -1,12 +1,11 @@
 """Simula un torneo en curso sobre la base de datos local.
 
-Deja la DB como si hoy fuera el "día 3" del Mundial: desplaza el
-calendario completo para que el primer día de partidos caiga dos días
-antes de ``--day3-date`` (default: hoy), fabrica resultados plausibles
-para los partidos ya "jugados" (marcador, tarjetas y un ``raw_fd`` con
-formato del endpoint detail de football-data: ``goals[]`` y
-``bookings[]``), completa las predicciones de grupos de los usuarios
-activos y marca sus envíos.
+Deja la DB como si hoy fuera el día ``--day`` del Mundial (default 5):
+desplaza el calendario completo para que el día 1 caiga ``day - 1``
+días atrás, fabrica resultados plausibles para los partidos ya
+"jugados" (marcador, tarjetas y un ``raw_fd`` con formato del endpoint
+detail de football-data: ``goals[]`` y ``bookings[]``), completa las
+predicciones de grupos de los usuarios activos y marca sus envíos.
 
 Idempotente: el desplazamiento se ancla a una fecha absoluta y los
 datos ya generados no se vuelven a tocar (salvo ``--rebuild-results``).
@@ -15,12 +14,12 @@ SOLO para la DB local. Respalda antes:  cp db/app.sqlite3 db/app.sqlite3.bak
 """
 
 import random
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
-from django.utils.dateparse import parse_date
 
 from pool.models import Prediction, StageUser, User
 from tournament.models import Match, Stage
@@ -116,8 +115,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
-            "--day3-date", default=None,
-            help="Fecha (YYYY-MM-DD, hora de CDMX) que será el día 3. Default: hoy.",
+            "--day", type=int, default=5,
+            help="Día del Mundial que será HOY (hora de CDMX). Default: 5.",
         )
         parser.add_argument("--seed", type=int, default=2026)
         parser.add_argument(
@@ -128,34 +127,32 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options) -> None:
         rng = random.Random(options["seed"])
-        if options["day3_date"]:
-            day3 = parse_date(options["day3_date"])
-            if day3 is None:
-                raise CommandError("--day3-date debe ser YYYY-MM-DD.")
-        else:
-            day3 = timezone.localdate()
+        if options["day"] < 1:
+            raise CommandError("--day debe ser >= 1.")
+        today = timezone.localdate()
 
         matches = list(Match.objects.order_by("datetime", "of_number"))
         if not matches:
             raise CommandError("No hay partidos; corre los seeds primero.")
 
-        delta_days = self._shift_calendar(matches, day3)
-        finished = self._fabricate_results(rng, matches, day3, options["rebuild_results"])
+        delta_days = self._shift_calendar(matches, today, options["day"])
+        finished = self._fabricate_results(rng, matches, today, options["rebuild_results"])
         deadline = self._configure_group_stage(matches)
         created_su = self._sync_stage_users()
         created_preds = self._fill_predictions(rng, deadline)
         marked_sent = self._mark_sent(rng, deadline)
 
         self.stdout.write(self.style.SUCCESS(
-            f"Calendario desplazado {delta_days:+d} día(s). "
-            f"Resultados fabricados: {finished}. StageUser creados: {created_su}. "
-            f"Predicciones creadas: {created_preds}. Envíos marcados: {marked_sent}."
+            f"Calendario desplazado {delta_days:+d} día(s) (hoy = día "
+            f"{options['day']}). Resultados fabricados: {finished}. "
+            f"StageUser creados: {created_su}. Predicciones creadas: "
+            f"{created_preds}. Envíos marcados: {marked_sent}."
         ))
 
-    def _shift_calendar(self, matches: list[Match], day3) -> int:
-        """Ancla el día 1 a (day3 - 2): re-ejecutar da delta 0."""
+    def _shift_calendar(self, matches: list[Match], today, day: int) -> int:
+        """Ancla el día 1 a (hoy - (day-1)): re-ejecutar da delta 0."""
         current_day1 = timezone.localdate(matches[0].datetime)
-        delta = (day3 - timedelta(days=2)) - current_day1
+        delta = (today - timedelta(days=day - 1)) - current_day1
         if delta:
             for match in matches:
                 match.datetime += delta
@@ -163,11 +160,11 @@ class Command(BaseCommand):
         return delta.days
 
     def _fabricate_results(
-        self, rng: random.Random, matches: list[Match], day3, rebuild: bool
+        self, rng: random.Random, matches: list[Match], today, rebuild: bool
     ) -> int:
         count = 0
         for match in matches:
-            if timezone.localdate(match.datetime) >= day3:
+            if timezone.localdate(match.datetime) >= today:
                 continue
             if match.home_team is None or match.away_team is None:
                 continue
@@ -187,13 +184,20 @@ class Command(BaseCommand):
         return count
 
     def _configure_group_stage(self, matches: list[Match]):
-        """Cierra la fase de grupos: deadline = kickoff del partido 1."""
-        kickoff = matches[0].datetime
-        Stage.objects.filter(key="GROUP_STAGE").update(
-            opens_at=kickoff - timedelta(days=30),
-            send_deadline=kickoff,
+        """Cierra la fase de grupos.
+
+        Regla (ver reglas.html): la quiniela cierra a las 11:59 pm del
+        día previo al primer partido, en hora de CDMX.
+        """
+        day_before = timezone.localdate(matches[0].datetime) - timedelta(days=1)
+        deadline = timezone.make_aware(
+            datetime.combine(day_before, time(23, 59))
         )
-        return kickoff
+        Stage.objects.filter(key="GROUP_STAGE").update(
+            opens_at=deadline - timedelta(days=30),
+            send_deadline=deadline,
+        )
+        return deadline
 
     def _sync_stage_users(self) -> int:
         stages = list(Stage.objects.all())
@@ -230,9 +234,14 @@ class Command(BaseCommand):
         return len(to_create)
 
     def _mark_sent(self, rng: random.Random, deadline) -> int:
+        """Marca envíos pendientes y corrige los que quedaron obsoletos.
+
+        Tras re-anclar el calendario el deadline puede haber retrocedido,
+        dejando ``sent_at`` posteriores a él; se regeneran también.
+        """
         rows = StageUser.objects.filter(
+            Q(sent_at__isnull=True) | Q(sent_at__gt=deadline),
             stage__key="GROUP_STAGE",
-            sent_at__isnull=True,
             user__is_active=True,
         ).select_related("user")
         count = 0

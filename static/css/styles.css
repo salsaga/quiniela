@@ -100,7 +100,7 @@
 }
 .board-row {
   display: grid;
-  grid-template-columns: 44px 1fr 36px 36px 56px;
+  grid-template-columns: 36px 52px 1fr 40px 40px;
   align-items: center;
 
   padding: 10px 14px;
@@ -116,11 +116,21 @@
 .board-head .board-pts {
   color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
+}
+.board-icon {
+  width: 14px;
+  height: 14px;
+
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  vertical-align: -2px;
 }
 .board-pos {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--gold-faded);
+  color: var(--muted);
 }
 .board-name {
   font-weight: 600;
@@ -141,12 +151,14 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+/* Los puntos: la única columna en dorado, pegada al nombre. */
 .board-pts {
-  text-align: right;
+  text-align: center;
   color: var(--gold-text);
   font-size: 15px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  padding-right: 10px;
 }
 .board-row--me {
   background: var(--gold-soft);
@@ -314,9 +326,13 @@
   font-variant-numeric: tabular-nums;
 }
 /* Resultado final del partido: fila sutil sobre la línea principal.
-   El label con borde la distingue de la predicción; los puntos a la
-   derecha con el código de color (rojo/verde/dorado). */
+   "Final: 2 - 4" centrado sobre los inputs; los puntos a la derecha con
+   el código de color (rojo/verde/dorado). El badge "+1" del bono por
+   diferencia sobresale a la derecha del subrayado: los pts mostrados
+   son la base, base + badge = total (sin ambigüedad). */
 .result-row {
+  position: relative;
+
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -328,29 +344,27 @@
   font-size: 12px;
   border-bottom: 1px dotted rgba(255, 255, 255, 0.18);
 }
+.result-final {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
 .result-label {
-  justify-self: start;
-
-  padding: 1px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 .result-score {
+  font-size: 14px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
+/* Mismo borde derecho en todas las tarjetas para que "0 pts", "3 pts" y
+   "5 pts" queden alineados; el badge vive fuera de ese borde. */
 .result-points {
   justify-self: end;
-
-  display: inline-flex;
-  align-items: center;
 
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -360,7 +374,10 @@
 .result-points--exact { color: var(--gold); }
 .result-points--none { color: var(--muted); font-weight: 400; }
 .diff-badge {
-  margin-left: 4px;
+  position: absolute;
+  right: -28px;
+  top: 1px;
+
   padding: 0 5px;
 
   background: var(--gold-soft);
@@ -781,16 +798,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 
   padding: 12px 14px 10px;
 }
 .day-summary::-webkit-details-marker {
   display: none;
 }
-.day-phase {
-  align-self: flex-start;
+/* Primera línea: chevron (mismo elemento que en los grupos) + fase. */
+.day-summary-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
+  width: 100%;
+}
+.day-match[open] .chevron {
+  transform: rotate(90deg);
+}
+.day-phase {
   padding: 1px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -801,26 +827,27 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
+/* Equipos y "vs" en una línea; goles centrados bajo su columna. */
 .day-teams {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  gap: 10px;
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
 
   width: 100%;
   max-width: 420px;
 }
-.day-team {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.day-team--home { align-items: flex-end; text-align: right; }
-.day-team--away { align-items: flex-start; }
 .day-team-line {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+
+  justify-self: start;
+}
+.day-team-line--home {
+  justify-self: end;
+  text-align: right;
 }
 .day-team-line img {
   max-width: 26px;
@@ -833,13 +860,14 @@
   line-height: 1.1;
 }
 .day-vs {
-  align-self: center;
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
 .day-goals {
+  justify-self: center;
+
   font-size: 26px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -847,6 +875,8 @@
   line-height: 1;
 }
 .day-pending {
+  margin-left: auto;
+
   color: var(--secondary);
   font-size: 11px;
   font-style: italic;
@@ -865,7 +895,12 @@
   margin: 8px auto 0;
 }
 .day-cols > :first-child { text-align: right; }
+/* Tarjetas y goles predichos centrados en su columna (los goleadores
+   conservan la alineación de columna). */
 .day-cards {
+  display: block;
+  text-align: center;
+
   font-size: 12px;
   color: var(--muted);
 }
@@ -889,6 +924,10 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+/* Tras .day-cols > :first-child para ganar en cascada (misma especificidad). */
+.day-cols.day-prediction > * {
+  text-align: center;
 }
 .day-prediction .day-pred-goals {
   font-size: 18px;
@@ -935,15 +974,18 @@
 
 .rivals {
   max-width: 420px;
-  margin: 12px auto 0;
+  margin: 18px auto 8px;
 }
 .rivals > summary {
   list-style: none;
   cursor: pointer;
 
+  padding: 4px 0;
+
   text-align: center;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--gold-text);
+  font-size: 13px;
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
 }

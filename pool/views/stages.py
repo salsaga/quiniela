@@ -36,6 +36,9 @@ def annotate_result(match: Match, prediction: Prediction | None) -> None:
     )
     match.user_points = detail.points
     match.diff_bonus = detail.diff_bonus
+    # En pantalla el bono va como badge "+1" aparte; mostrar el total
+    # junto al badge se leería como total+1, así que se exhibe la base.
+    match.base_points = detail.points - (1 if detail.diff_bonus else 0)
     if detail.points == 0:
         match.points_kind = "miss"
     elif detail.exact:
