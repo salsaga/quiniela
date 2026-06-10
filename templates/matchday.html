@@ -84,10 +84,10 @@
 
                 {% if match.points_lines %}
                 <div class="day-points">
-                    {% for label, value in match.points_lines %}
+                    {% for label, value, kind in match.points_lines %}
                     <div class="day-points-line">
                         <span>{{ label }}</span>
-                        <b>{{ value }}</b>
+                        <b class="day-points-val--{{ kind }}">{{ value }}</b>
                     </div>
                     {% endfor %}
                     {% if match.points_lines|length > 1 %}

@@ -41,14 +41,21 @@ def _scorers(match: Match) -> tuple[list[str], list[str]]:
 
 
 def _points_breakdown(detail: ScoreDetail, is_draw: bool) -> list[tuple]:
-    """Desglose aditivo de los puntos: las líneas suman el total."""
+    """Desglose aditivo de los puntos: las líneas suman el total.
+
+    Cada línea es ``(label, valor, kind)``; ``kind`` colorea el valor
+    con el mismo lenguaje de las tarjetas (miss rojo, hit verde,
+    bonus dorado).
+    """
     if detail.points == 0:
-        return [("Resultado errado", "0")]
-    lines = [("Empate acertado" if is_draw else "Ganador acertado", "+3")]
+        return [("Resultado errado", "0", "miss")]
+    lines = [
+        ("Empate acertado" if is_draw else "Ganador acertado", "+3", "hit")
+    ]
     if not is_draw and (detail.diff_bonus or detail.exact):
-        lines.append(("Diferencia exacta", "+1"))
+        lines.append(("Diferencia exacta", "+1", "bonus"))
     if detail.exact:
-        lines.append(("Marcador exacto", "+1"))
+        lines.append(("Marcador exacto", "+1", "bonus"))
     return lines
 
 

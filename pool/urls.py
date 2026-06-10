@@ -1,7 +1,6 @@
 """Rutas de la app pool (quiniela)."""
 
 from django.urls import path
-from django.views.generic import RedirectView
 
 from pool.views import auth, leaderboard, matches, predictions, stages
 
@@ -19,9 +18,5 @@ urlpatterns = [
         name="save_prediction",
     ),
     path("send/", predictions.send_predictions, name="send"),
-    path(
-        "",
-        RedirectView.as_view(url="/stage/GROUP_STAGE/"),
-        name="root",
-    ),
+    path("", stages.root_redirect, name="root"),
 ]

@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from pool.models import Prediction, StageUser, User
@@ -167,3 +167,11 @@ def stage_view(request: HttpRequest, key: str) -> HttpResponse:
 
 def reglas(request: HttpRequest) -> HttpResponse:
     return render(request, "reglas.html", tabs_context(request.user))
+
+
+def root_redirect(request: HttpRequest) -> HttpResponse:
+    """Portada: ya iniciado el Mundial manda a la vista por día."""
+    first = Match.objects.order_by("datetime").first()
+    if first and first.datetime <= timezone.now():
+        return redirect("matches")
+    return redirect("stage", key=Stage.GROUP_STAGE)

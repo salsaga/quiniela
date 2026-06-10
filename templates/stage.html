@@ -48,13 +48,11 @@
             {% endif %}
             {% if match.is_finished %}
             <div class="result-row">
-                <span></span>
-                <span class="result-final">
-                    <span class="result-label">Final:</span>
-                    <span class="result-score">{{ match.home_goals }} - {{ match.away_goals }}</span>
-                </span>
+                <span class="result-label">Final:</span>
+                <span class="result-score">{{ match.home_goals }} - {{ match.away_goals }}</span>
                 {% if match.user_points is not None %}
                 <span class="result-points result-points--{{ match.points_kind }}">
+                    {% if match.points_kind == 'exact' %}{% include 'icons/mira.html' %}{% endif %}
                     {{ match.base_points }} pts{% if match.diff_bonus %}<span class="diff-badge">+1</span>{% endif %}
                 </span>
                 {% else %}
