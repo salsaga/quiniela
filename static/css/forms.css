@@ -75,10 +75,10 @@
 
 .login-submit input{
     height: 44px;
-    border: 1px solid #cdb36f;
-    border-radius: 14px;
+    border: 1px solid var(--gold-text);
+    border-radius: var(--radius-md);
     background: var(--surface);
-    color: #cdb36f;
+    color: var(--gold-text);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: .04em;

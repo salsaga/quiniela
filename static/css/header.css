@@ -9,11 +9,45 @@
     padding: 12px 16px;
     height: 52px;
 
-    background: rgba(15, 17, 21, 0.92);
+    background: var(--header-bg);
     backdrop-filter: blur(10px);
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     z-index: 2;
+}
+
+/* Posición y puntos del usuario; mismo lenguaje de pill que .user-chip. */
+.rank-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+    border-radius: var(--radius-pill);
+
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: background 180ms ease;
+}
+.rank-chip:hover {
+    background: var(--gold-soft);
+    color: var(--text);
+}
+.rank-icon {
+    font-size: 12px;
+}
+.rank-pos {
+    color: var(--gold-text);
+    font-weight: 700;
+}
+.rank-pts {
+    color: var(--muted);
+    font-size: 12px;
 }
 
 .menu-btn {
@@ -72,7 +106,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     border: none;
     background: rgba(255, 255, 255, 0.1);
     color: var(--text);

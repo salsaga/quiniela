@@ -12,12 +12,24 @@
 
   --gold: #d4af37;
   --gold-soft: rgba(212, 175, 55, 0.14);
+  --gold-text: #cdb36f;
+  --gold-faded: rgba(195, 167, 100, 0.8);
+
+  --success: #6bbf8a;
+  --success-soft: rgba(107, 191, 138, 0.16);
+  --danger: #e87878;
+  --danger-soft: rgba(232, 120, 120, 0.14);
 
   --surface-light: #252525;
   --gold-hover: #e5c55c;
   --border: #353535;
+  --header-bg: rgba(15, 17, 21, 0.92);
 
-  --secundary: #B8C0CC
+  --radius-sm: 7px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+
+  --secondary: #B8C0CC
 }
 
 body {

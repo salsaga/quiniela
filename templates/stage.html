@@ -5,17 +5,7 @@
 
 {% include 'header.html' %}
 
-<nav class="stage-tabs" aria-label="Fases">
-    <a class="stage-tab" href="/reglas">
-        reglas
-    </a>
-    {% for tab in tabs %}
-    <a class="stage-tab{% if tab.stage.key == stage.key %} active{% endif %}"
-       href="{% url 'stage' tab.stage.key %}">
-        {{ tab.stage.short_name }}
-    </a>
-    {% endfor %}
-</nav>
+{% include 'tabs.html' with active=stage.key %}
 
 <main class="content" data-stage="{{ stage.key }}" data-state="{{ state }}">
     {% if state == 'upcoming' %}
@@ -34,7 +24,7 @@
             </span>
             Grupo {{ section.key }}
             <span class="group-flags">{% for team in section.teams %}{% if team.flag_path %}<img src="{% static team.flag_path %}" alt="{{ team.name_es }}" title="{{ team.name_es }}">{% endif %}{% endfor %}</span>
-            <span class="section-count">{% if state == 'sent' %}0 pts{% else %}{{ section.filled }}/{{ section.total }}{% endif %}</span>
+            <span class="section-count">{% if state == 'sent' %}{{ section.points }} pts{% else %}{{ section.filled }}/{{ section.total }}{% endif %}</span>
         </summary>
     {% else %}
     <div class="knockout">
@@ -43,7 +33,7 @@
         {% if not is_group_stage %}
         <h6 class="chip-title">
             {{ stage.name|upper }}
-            <span class="section-count">{% if state == 'sent' %}0 pts{% else %}{{ section.filled }}/{{ section.total }}{% endif %}</span>
+            <span class="section-count">{% if state == 'sent' %}{{ section.points }} pts{% else %}{{ section.filled }}/{{ section.total }}{% endif %}</span>
         </h6>
         {% endif %}
 
@@ -55,6 +45,19 @@
             </div>
             {% elif not is_group_stage %}
             <span class="match-side-code">{{ match.of_number }}</span>
+            {% endif %}
+            {% if match.is_finished %}
+            <div class="result-row">
+                <span class="result-label">Final</span>
+                <span class="result-score">{{ match.home_goals }} - {{ match.away_goals }}</span>
+                {% if match.user_points is not None %}
+                <span class="result-points result-points--{{ match.points_kind }}">
+                    {{ match.user_points }} pts{% if match.diff_bonus %}<span class="diff-badge">+1</span>{% endif %}
+                </span>
+                {% else %}
+                <span class="result-points result-points--none">&mdash;</span>
+                {% endif %}
+            </div>
             {% endif %}
             <div class="match" data-match-id="{{ match.id }}">
                 <div class="team">
@@ -137,8 +140,14 @@
 </div>
 
 <div id="saving-overlay" hidden>
-    <div class="spinner"></div>
-    <p>Guardando predicciones...</p>
+    <div class="overlay-saving">
+        <div class="spinner"></div>
+        <p>Guardando predicciones...</p>
+    </div>
+    <div class="overlay-success">
+        <span class="overlay-check">✓</span>
+        <p>¡Predicciones enviadas!</p>
+    </div>
 </div>
 
 {# Resumen previo al envío; el cuerpo lo llena submit.js clonando .match-card. #}

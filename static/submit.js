@@ -220,6 +220,8 @@ function buildSummary() {
 function freezeCard(card) {
     const clone = card.cloneNode(true);
     clone.querySelector(".meta")?.remove();
+    // El resumen es de predicciones: el resultado real no va en el modal.
+    clone.querySelector(".result-row")?.remove();
     // cloneNode no copia el value en vivo de los inputs; lo sincronizo.
     const liveInputs = card.querySelectorAll(".score input");
     clone.querySelectorAll(".score input").forEach((input, i) => {
@@ -230,12 +232,31 @@ function freezeCard(card) {
 }
 
 async function confirmSend() {
+    // Deshabilitar evita el doble envío mientras responde el servidor.
+    const dialogButtons = sendDialog.querySelectorAll(".submit-btn");
+    dialogButtons.forEach(button => (button.disabled = true));
     savingOverlay.hidden = false;
     try {
         await postPredictions("/send/", buildPayload());
-        location.reload();
+        savingOverlay.classList.add("success");
+        sessionStorage.setItem(
+            "justSent", document.querySelector(".content").dataset.stage
+        );
+        setTimeout(() => location.reload(), 900);
     } catch (err) {
         alert(err.message);
         savingOverlay.hidden = true;
+        dialogButtons.forEach(button => (button.disabled = false));
     }
 }
+
+// Refuerzo tras el reload: la página ya muestra "✓ Predicciones Enviadas"
+// en el footer, pero el snackbar confirma que el envío recién ocurrió.
+document.addEventListener("DOMContentLoaded", () => {
+    const content = document.querySelector(".content");
+    if (!content) return;
+    if (sessionStorage.getItem("justSent") === content.dataset.stage) {
+        sessionStorage.removeItem("justSent");
+        showSnack("Predicciones enviadas");
+    }
+});

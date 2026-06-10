@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+{% include 'header.html' %}
+{% include 'tabs.html' with active='live' %}
+
+<main class="content matchday">
+    {% for day in days %}
+    <section class="day" id="day-{{ day.date|date:'Y-m-d' }}"{% if day.is_today %} data-today{% elif not day.is_past %} data-future{% endif %}>
+        <h6 class="day-head">
+            {{ day.label }}
+            {% if day.is_today %}<span class="day-today-tag">hoy</span>{% endif %}
+        </h6>
+
+        {% for match in day.matches %}
+        <details class="day-match"{% if day.is_today %} open{% endif %}>
+            <summary class="day-summary">
+                <span class="day-phase">{{ match.phase_label }}</span>
+
+                <div class="day-teams">
+                    <div class="day-team day-team--home">
+                        <span class="day-team-line">
+                            {% if match.home_team %}
+                            <span class="day-team-name">{{ match.home_team.name_es }}</span>
+                            {% if match.home_team.flag_path %}<img src="{% static match.home_team.flag_path %}" alt="{{ match.home_team.name_es }}">{% endif %}
+                            {% else %}
+                            <span class="team-placeholder">{{ match.home_placeholder }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="day-goals">{% if match.is_finished %}{{ match.home_goals }}{% else %}&ndash;{% endif %}</span>
+                    </div>
+
+                    <span class="day-vs">vs</span>
+
+                    <div class="day-team day-team--away">
+                        <span class="day-team-line">
+                            {% if match.away_team %}
+                            {% if match.away_team.flag_path %}<img src="{% static match.away_team.flag_path %}" alt="{{ match.away_team.name_es }}">{% endif %}
+                            <span class="day-team-name">{{ match.away_team.name_es }}</span>
+                            {% else %}
+                            <span class="team-placeholder">{{ match.away_placeholder }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="day-goals">{% if match.is_finished %}{{ match.away_goals }}{% else %}&ndash;{% endif %}</span>
+                    </div>
+                </div>
+
+                {% if not match.is_finished %}
+                <span class="day-pending">{{ match.local_time }} hora local · por jugar</span>
+                {% endif %}
+            </summary>
+
+            <div class="day-body">
+                {% if match.is_finished %}
+                <div class="day-cols">
+                    <div class="day-col">
+                        <span class="day-cards">🟨 {{ match.home_yellow|default_if_none:0 }} &nbsp; 🟥 {{ match.home_red|default_if_none:0 }}</span>
+                        <ul class="day-scorers">
+                            {% for scorer in match.home_scorers %}<li>{{ scorer }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                    <div class="day-col">
+                        <span class="day-cards">🟨 {{ match.away_yellow|default_if_none:0 }} &nbsp; 🟥 {{ match.away_red|default_if_none:0 }}</span>
+                        <ul class="day-scorers">
+                            {% for scorer in match.away_scorers %}<li>{{ scorer }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if match.predicted_home is not None %}
+                <h6 class="day-subtitle">Tu predicción</h6>
+                <div class="day-cols day-prediction">
+                    <span class="day-pred-goals">{{ match.predicted_home }}</span>
+                    <span class="day-pred-goals">{{ match.predicted_away }}</span>
+                </div>
+                {% elif not match.is_finished and match.home_team %}
+                <p class="day-note">Sin predicción guardada.</p>
+                {% endif %}
+
+                {% if match.points_lines %}
+                <div class="day-points">
+                    {% for label, value in match.points_lines %}
+                    <div class="day-points-line">
+                        <span>{{ label }}</span>
+                        <b>{{ value }}</b>
+                    </div>
+                    {% endfor %}
+                    <div class="day-points-line day-points-total">
+                        <span>Total</span>
+                        <span class="result-points result-points--{{ match.points_kind }}">{{ match.user_points }} pts</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if match.rival_predictions %}
+                <details class="rivals">
+                    <summary>ver predicciones rivales</summary>
+                    <ul class="rivals-list">
+                        {% for rival in match.rival_predictions %}
+                        <li>
+                            <span class="rivals-name">{{ rival.name }}</span>
+                            <span class="rivals-score">{{ rival.home }} - {{ rival.away }}</span>
+                            {% if rival.detail %}
+                            <span class="rivals-pts">{{ rival.detail.points }} pts</span>
+                            {% else %}
+                            <span class="rivals-pts">&mdash;</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </details>
+                {% endif %}
+            </div>
+        </details>
+        {% endfor %}
+    </section>
+    {% endfor %}
+</main>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'matchday.js' %}"></script>
+{% endblock %}

@@ -6,10 +6,42 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 
 from pool.models import Prediction, StageUser, User
+from pool.services.scoring import score_detail
 from pool.utils import format_day, format_time
 from tournament.models import Match, Stage, Team
+
+
+def annotate_result(match: Match, prediction: Prediction | None) -> None:
+    """Adjunta en memoria el resultado final y los puntos del usuario.
+
+    Solo aplica a partidos FINISHED con marcador; deja ``is_finished``
+    en False en cualquier otro caso. ``points_kind`` alimenta el código
+    de color: miss (0, rojo), hit (verde), exact (dorado).
+    """
+    match.is_finished = (
+        match.status == "FINISHED"
+        and match.home_goals is not None
+        and match.away_goals is not None
+    )
+    match.user_points = None
+    match.diff_bonus = False
+    if not match.is_finished or prediction is None:
+        return
+    detail = score_detail(
+        prediction.home_goals, prediction.away_goals,
+        match.home_goals, match.away_goals,
+    )
+    match.user_points = detail.points
+    match.diff_bonus = detail.diff_bonus
+    if detail.points == 0:
+        match.points_kind = "miss"
+    elif detail.exact:
+        match.points_kind = "exact"
+    else:
+        match.points_kind = "hit"
 
 
 def render_stage_sections(user: User, stage: Stage) -> list[dict]:
@@ -34,6 +66,7 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
     is_group = stage.key == Stage.GROUP_STAGE
     grouped: dict[str | None, list[Match]] = defaultdict(list)
     filled: dict[str | None, int] = defaultdict(int)
+    points: dict[str | None, int] = defaultdict(int)
     teams: dict[str | None, dict[int, Team]] = defaultdict(dict)
     for match in matches:
         key = match.home_team.group_name if is_group else None
@@ -42,6 +75,9 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
             match.predicted_home = prediction.home_goals
             match.predicted_away = prediction.away_goals
             filled[key] += 1
+        annotate_result(match, prediction)
+        if match.user_points is not None:
+            points[key] += match.user_points
         local_dt = match.datetime + timedelta(
             hours=match.stadium.utc_offset
         )
@@ -60,6 +96,7 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
             "matches": grouped[key],
             "filled": filled[key],
             "total": len(grouped[key]),
+            "points": points[key],
             "teams": sorted(teams[key].values(), key=lambda t: t.name_es),
         }
         for key in keys
@@ -85,6 +122,20 @@ def _build_tabs(user: User) -> list[dict]:
     return tabs
 
 
+def tabs_context(user: User) -> dict:
+    """Tabs + fase tras la cual va el chip "en juego" (la del próximo
+    partido por jugarse; si el torneo terminó, la del último)."""
+    anchor = (
+        Match.objects.filter(datetime__gte=timezone.now())
+        .order_by("datetime").select_related("stage").first()
+        or Match.objects.order_by("datetime").select_related("stage").last()
+    )
+    return {
+        "tabs": _build_tabs(user),
+        "live_after_key": anchor.stage.key if anchor else None,
+    }
+
+
 @login_required
 def stage_view(request: HttpRequest, key: str) -> HttpResponse:
     """Renderiza la página de una fase con el estado del usuario.
@@ -102,7 +153,7 @@ def stage_view(request: HttpRequest, key: str) -> HttpResponse:
         "can_edit": stage_user.can_edit,
         "sections": render_stage_sections(request.user, stage),
         "is_group_stage": stage.key == Stage.GROUP_STAGE,
-        "tabs": _build_tabs(request.user),
+        **tabs_context(request.user),
         "deadline_iso": (
             stage.send_deadline.isoformat()
             if stage.send_deadline
@@ -112,4 +163,4 @@ def stage_view(request: HttpRequest, key: str) -> HttpResponse:
     return render(request, "stage.html", context)
 
 def reglas(request: HttpRequest) -> HttpResponse:
-    return render(request, "reglas.html", {"tabs": _build_tabs(request.user)})
+    return render(request, "reglas.html", tabs_context(request.user))

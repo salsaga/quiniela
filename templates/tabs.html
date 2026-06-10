@@ -1,0 +1,20 @@
+{# Tabs de fase compartidos. Espera: tabs, live_after_key y active #}
+{# (key de fase, "live" o "reglas"). El chip "en juego" se inserta a la #}
+{# derecha de la fase que tenga el próximo partido por jugarse. #}
+<nav class="stage-tabs" aria-label="Fases">
+    <a class="stage-tab{% if active == 'reglas' %} active{% endif %}" href="{% url 'reglas' %}">
+        reglas
+    </a>
+    {% for tab in tabs %}
+    <a class="stage-tab{% if active == tab.stage.key %} active{% endif %}"
+       href="{% url 'stage' tab.stage.key %}">
+        {{ tab.stage.short_name }}
+    </a>
+    {% if tab.stage.key == live_after_key %}
+    <a class="stage-tab stage-tab-live{% if active == 'live' %} active{% endif %}"
+       href="{% url 'matches' %}">
+        ⚽ en juego
+    </a>
+    {% endif %}
+    {% endfor %}
+</nav>

@@ -16,6 +16,10 @@ The project venv lives at `D:\env\quiniela` (interpreter:
   `load_stadiums` → `load_stages` → `load_teams` → `load_matches`,
   reading from `db/jsons/{of,fd,manual}/`.
 - `python manage.py preregister <email> "<name>"` — add a player (`pool` app)
+- `python manage.py simulate` — LOCAL ONLY: shifts the calendar so today is
+  matchday 3, fabricates results/predictions/sent states (idempotent; back up
+  `db/app.sqlite3` first; restore by re-running the seeds).
+- `python manage.py test pool` — unit tests (scoring + leaderboard).
 - DB selection is env-driven: set `POSTGRES_DB` for Postgres, leave it empty
   to fall back to SQLite at `db/app.sqlite3`.
 
@@ -28,17 +32,24 @@ The project venv lives at `D:\env\quiniela` (interpreter:
   `StageUser`.
 - Views split by concern in `pool/views/`: `auth.py` (email login),
   `stages.py` (per-stage predictions page + tabs), `predictions.py` (JSON
-  save + per-match autosave + send).
-- Excel generation + email in `pool/services/excel.py`.
+  save + per-match autosave + send), `leaderboard.py` (standings) and
+  `matches.py` (by-day "en juego" view).
+- Excel generation + email in `pool/services/excel.py`. Scoring rules in
+  `pool/services/scoring.py` (`score_detail`: points + exact/diff flags);
+  standings in `pool/services/leaderboard.py` (in-memory, FINISHED only).
+  The header rank-chip comes from `pool.context_processors.standing`.
+- **No frontend framework** (decided): server-rendered DTL + vanilla JS.
+  Future phase simulator should embed data via `json_script` + pure-JS
+  module (instant, no server round-trip). If JS rendering ever gets
+  unwieldy, the next step is Alpine.js/htmx (no build step), not a SPA.
 - Data seeded from two sources committed under `db/jsons/`: OF (openfootball,
   base seed) and FD (football-data.org, `fd_id` + results). Manual overrides
   (e.g. Spanish names) in `db/jsons/manual/`; old files in `db/jsons/legacy/`.
 
 ## Gotchas
 
-- **No passwords.** Login is email-only (`views/auth.py`); `is_active=False`
-  means pre-registered but not yet entered. The custom `UserManager` calls
-  `set_unusable_password()`.
+- **This app is mobile first** Things should look good in a Galaxy S8, 
+  try to be responsive, but avoid adding complexity for desktop.
 - **`username` always equals `email`** (forced in `User.save()`). The player's
   display name lives in `first_name`, not `username`.
 - **`home`/`away`, not `a`/`b`.** Models, templates and `static/submit.js` all
