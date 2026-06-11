@@ -80,6 +80,21 @@ The project venv lives at `D:\env\quiniela` (interpreter:
   so the file matches what was sent.
 - **JSON endpoints use a trailing slash** and require the `X-CSRFToken` header
   (set in `static/submit.js`).
+- **Scoring rules.** `score_detail()` returns `ScoreDetail(points, exact,
+  diff_bonus)` or `None` (missing data ≠ 0 pts). Rules: 3 pts for correct
+  result; +1 for correct goal difference (non-draws only); +1 for exact
+  scoreline. Max: 5 (winner exact) / 4 (draw exact). `exact` and `diff_bonus`
+  are disjoint flags.
+- **`annotate_result(match, prediction)`** attaches in memory: `is_finished`,
+  `user_points`, `diff_bonus`, `base_points`, `points_kind`. `base_points` =
+  points − diff_bonus (diff_bonus renders as a separate "+1" badge, so
+  displaying `base_points` + badge avoids reading "5+1"). `points_kind` ∈
+  {`miss`, `hit`, `exact`} drives CSS color classes (red / green / gold).
+- **`tabs_context(user)`** is the standard helper for all views: returns `tabs`
+  + `live_after_key` (stage key of the next upcoming match, used to position
+  the "en juego" chip). Never call `_build_tabs()` directly.
+- **Rival predictions are private until deadline.** `matches_by_day` only
+  exposes other players' picks for stages where `Stage.is_past_deadline`.
 
 ## Deploy
 
