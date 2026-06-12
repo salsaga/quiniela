@@ -127,4 +127,18 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Cache busting: collectstatic copia cada archivo con un hash de su
+# contenido en el nombre (styles.abc123.css) y reescribe los @import
+# del CSS; al liberar estilos nuevos la URL cambia y el cache viejo de
+# los navegadores deja de aplicar. Con DEBUG=True el storage devuelve
+# nombres planos, así que en local no hace falta collectstatic.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+        ),
+    },
+}
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
