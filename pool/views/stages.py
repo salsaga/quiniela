@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from pool.models import Prediction, StageUser, User
 from pool.services.match_dialog import build_match_dialog_payload
-from pool.services.scoring import score_detail
+from pool.services.scoring import result_chips, score_detail
 from pool.services.standings import build_group_standings
 from pool.utils import format_day, format_long_day, format_time
 from tournament.models import Match, Stage, Team
@@ -19,13 +19,6 @@ from tournament.models import Match, Stage, Team
 # Ventana en la que un partido se considera "en juego". La app no es en
 # tiempo real: el resultado aparece hasta que el sync lo marque FINISHED.
 LIVE_WINDOW = timedelta(hours=2)
-
-
-def _chip(label: str, value: int, state: str, icon: str = "") -> dict:
-    # icon: nombre del ícono a pintar en el chip ("check"/"mira") o "" para
-    # mostrar el texto del label. Alinea la iconografía con el leaderboard.
-    text = {"on": str(value), "off": "0", "na": "—"}[state]
-    return {"label": label, "text": text, "state": state, "icon": icon}
 
 
 def annotate_result(match: Match, prediction: Prediction | None) -> None:
@@ -76,15 +69,7 @@ def annotate_result(match: Match, prediction: Prediction | None) -> None:
     )
     match.user_points = detail.points
     match.points_kind = "won" if detail.points else "zero"
-    # Los chips suman exactamente el total; en empate real la diferencia
-    # no aplica (na). El exacto incluye la diferencia, por eso enciende
-    # también su chip.
-    diff_on = detail.diff_bonus or (detail.exact and not is_draw)
-    match.chips = [
-        _chip("Res", 3, "on" if detail.points else "off", icon="check"),
-        _chip("Dif", 1, "na" if is_draw else ("on" if diff_on else "off")),
-        _chip("", 1, "on" if detail.exact else "off", icon="mira"),
-    ]
+    match.chips = result_chips(detail, is_draw)
 
 
 def render_stage_sections(user: User, stage: Stage) -> list[dict]:

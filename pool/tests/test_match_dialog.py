@@ -16,9 +16,8 @@ from pool.services.scoring import score_detail
 from tournament.models import Match, Stadium, Stage, Team
 
 
-def _row(name: str, home: int, away: int) -> dict:
-    return {"name": name, "home": home, "away": away,
-            "is_self": False, "points": None}
+def _row(name: str, home: int, away: int, is_self: bool = False) -> dict:
+    return {"name": name, "home": home, "away": away, "is_self": is_self}
 
 
 class GroupPredictionsTests(SimpleTestCase):
@@ -28,17 +27,19 @@ class GroupPredictionsTests(SimpleTestCase):
         groups = group_predictions(rows)
         self.assertEqual([g["diff"] for g in groups], [3, 1, 0, -2])
 
-    def test_within_group_total_goals_descending(self):
+    def test_subgroups_by_exact_score_total_descending(self):
         rows = [_row("a", 1, 0), _row("b", 3, 2), _row("c", 2, 1)]
         groups = group_predictions(rows)
         self.assertEqual(len(groups), 1)
-        names = [p["name"] for p in groups[0]["predictions"]]
-        self.assertEqual(names, ["b", "c", "a"])
+        scores = [(s["home"], s["away"]) for s in groups[0]["subgroups"]]
+        self.assertEqual(scores, [(3, 2), (2, 1), (1, 0)])
 
-    def test_equal_total_keeps_input_order(self):
+    def test_same_score_shares_subgroup_in_input_order(self):
         rows = [_row("ana", 2, 1), _row("beto", 2, 1), _row("caro", 2, 1)]
         groups = group_predictions(rows)
-        names = [p["name"] for p in groups[0]["predictions"]]
+        subgroups = groups[0]["subgroups"]
+        self.assertEqual(len(subgroups), 1)
+        names = [n["name"] for n in subgroups[0]["names"]]
         self.assertEqual(names, ["ana", "beto", "caro"])
 
     def test_empty_input(self):
@@ -46,16 +47,14 @@ class GroupPredictionsTests(SimpleTestCase):
 
 
 class DiffLabelTests(SimpleTestCase):
-    def test_home_wins(self):
-        self.assertEqual(diff_label(2, "México", "Canadá"),
-                         "México gana por 2 goles")
+    def test_home_wins_plural(self):
+        self.assertEqual(diff_label(2), "+2 goles")
 
     def test_away_wins_singular(self):
-        self.assertEqual(diff_label(-1, "México", "Canadá"),
-                         "Canadá gana por 1 gol")
+        self.assertEqual(diff_label(-1), "+1 gol")
 
     def test_draw(self):
-        self.assertEqual(diff_label(0, "México", "Canadá"), "Empate")
+        self.assertEqual(diff_label(0), "Empate")
 
 
 class PointsDisplayTests(SimpleTestCase):
@@ -137,30 +136,37 @@ class DialogPayloadPrivacyTests(TestCase):
         self.assertFalse(payload["revealed"])
         self.assertNotIn("groups", payload)
 
+    def _names(self, payload):
+        return [n for g in payload["groups"]
+                for s in g["subgroups"] for n in s["names"]]
+
     def test_closed_stage_includes_everyone(self):
         payload = self._payload_for(self.closed_match)
         self.assertTrue(payload["revealed"])
-        rows = [p for g in payload["groups"] for p in g["predictions"]]
-        self.assertEqual({r["name"] for r in rows}, {"Ana", "Beto"})
+        self.assertEqual({n["name"] for n in self._names(payload)},
+                         {"Ana", "Beto"})
 
     def test_is_self_flags_requesting_user(self):
         payload = self._payload_for(self.closed_match)
-        rows = [p for g in payload["groups"] for p in g["predictions"]]
-        self_flags = {r["name"]: r["is_self"] for r in rows}
-        self.assertEqual(self_flags, {"Ana": True, "Beto": False})
+        flags = {n["name"]: n["is_self"] for n in self._names(payload)}
+        self.assertEqual(flags, {"Ana": True, "Beto": False})
 
-    def test_finished_match_scores_predictions(self):
+    def test_finished_match_scores_subgroups(self):
         payload = self._payload_for(self.closed_match)
-        rows = [p for g in payload["groups"] for p in g["predictions"]]
-        by_name = {r["name"]: r for r in rows}
-        self.assertEqual(by_name["Ana"]["points"]["total"], 5)  # exacto
-        self.assertEqual(by_name["Beto"]["points"]["total"], 0)
+        points = {}
+        for g in payload["groups"]:
+            for s in g["subgroups"]:
+                for n in s["names"]:
+                    points[n["name"]] = s["points"]["total"]
+                    self.assertEqual(len(s["chips"]), 3)
+        self.assertEqual(points["Ana"], 5)  # exacto 2-1
+        self.assertEqual(points["Beto"], 0)
 
-    def test_group_labels_use_team_names(self):
+    def test_group_labels(self):
         payload = self._payload_for(self.closed_match)
-        labels = [g["label"] for g in payload["groups"]]
-        self.assertEqual(labels, ["México gana por 1 gol",
-                                  "Canadá gana por 1 gol"])
+        self.assertEqual([g["diff"] for g in payload["groups"]], [1, -1])
+        self.assertEqual([g["label"] for g in payload["groups"]],
+                         ["+1 gol", "+1 gol"])
 
     def test_is_knockout_follows_stage(self):
         self.assertFalse(self._payload_for(self.open_match)["is_knockout"])

@@ -126,7 +126,7 @@ The project venv lives at `venv/` inside the repo (interpreter:
   Tailwind's layered utilities, so when migrating a view you must DELETE its
   old rules from `styles.css` or they silently override the new classes.
   What remains there: unmigrated views (board, rules), DOM that
-  `match_dialog.js` builds (`day-*`, `rivals-*`, `record-*`), the dialogs'
+  `match_dialog.js` builds (`day-*`, `pred-*`, `record-*`), the dialogs'
   shell (`send-dialog`), `.submit-btn` and `#snackbar`.
 - **Don't name anything `.countdown`** (daisyUI component clashes; the
   deadline footer uses `.deadline-note`). Tailwind's preflight also makes

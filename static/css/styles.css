@@ -483,21 +483,62 @@
 }
 
 /* --- Dialog de detalle de partido + predicciones de todos ---
-   Autocontenido: las clases day-*/rivals-* vienen del módulo
+   Autocontenido: las clases day-*/pred-* vienen del módulo
    match_dialog.js; aquí se definen solo dentro del dialog. */
 .match-dialog .send-dialog-body {
   padding: 12px 16px;
 }
-/* Header con el status del partido al extremo derecho (scoped: el
-   send-dialog de envío conserva su head simple). */
+/* Header: banderas (izq.) · status (centro) · cerrar (der.). Scoped: el
+   send-dialog de envío conserva su head simple. */
 .match-dialog .send-dialog-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
 }
+.dialog-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dialog-flags img {
+  max-width: 30px;
+  max-height: 22px;
+  border-radius: 3px;
+}
+.dialog-flag-ph {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dialog-close {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.dialog-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.dialog-close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
 .dialog-status {
-  flex-shrink: 0;
+  justify-self: center;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
@@ -561,11 +602,12 @@
   font-weight: 700;
   text-transform: uppercase;
 }
-/* Goles pegados al centro (bajo el "vs"), grandes pero sin ser black. */
+/* Goles pegados al centro (bajo el "vs"); dorados y grandes, como el
+   marcador en la lista de partidos. */
 .match-dialog .day-goals {
-  color: var(--text);
-  font-size: 28px;
-  font-weight: 600;
+  color: var(--gold);
+  font-size: 34px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -609,7 +651,8 @@
   color: var(--muted);
   font-size: 12px;
 }
-/* Encabezado de grupo de predicciones: divisor dorado ligero. */
+/* Encabezado de grupo de predicciones: alineado a la izquierda, blanco,
+   con divisor neutro ligero. */
 .pred-group-head {
   margin: 14px 0 2px;
   padding-top: 8px;
@@ -620,56 +663,123 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-align: center;
+  text-align: left;
   text-transform: uppercase;
 }
-/* Banderita del equipo que gana en el grupo, tras la frase.
+/* Banderita del equipo que gana en el grupo, antes de la frase.
    inline-block: el preflight de Tailwind vuelve block toda img. */
 .pred-group-head img {
   display: inline-block;
   max-width: 18px;
   max-height: 13px;
-  margin-left: 6px;
+  margin-right: 6px;
   vertical-align: -2px;
   border-radius: 2px;
 }
-.match-dialog .rivals-list {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-}
-.match-dialog .rivals-list li {
-  display: grid;
-  grid-template-columns: 1fr auto 56px;
-  gap: 8px;
+/* Subgrupo: arriba marcador (izq.) + nombres en columnas (der.); abajo,
+   centrada, la línea de puntos + chips. */
+.match-dialog .pred-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 
-  padding: 4px 8px;
+  padding: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.match-dialog .pred-sub-top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+/* Marcador del pronóstico: blanco y compacto (guión pegado, atenuado),
+   a diferencia del resultado real arriba (dorado). */
+.match-dialog .pred-sub-result {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
 
-  font-size: 12px;
-}
-.match-dialog .rivals-list li.is-self {
-  background: var(--gold-soft);
-  border-radius: 6px;
-}
-.match-dialog .rivals-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 56px;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   white-space: nowrap;
 }
-.match-dialog .rivals-score {
+.match-dialog .pred-sub-dash {
+  opacity: 0.55;
+}
+.match-dialog .pred-sub-eval {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.match-dialog .pred-pts {
+  color: var(--text);
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.match-dialog .rivals-pts {
-  text-align: right;
-  color: var(--muted);
+/* Chips iguales a <c-chip>: dorado encendido, atenuado apagado/na. */
+.match-dialog .pred-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 2px 5px;
+
+  font-size: 11px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-/* Puntos con el lenguaje local: dorado acierta, muted no. */
-.match-dialog .day-points-val--miss { color: var(--muted); }
-.match-dialog .day-points-val--hit { color: var(--gold); }
-.match-dialog .day-points-val--exact { color: var(--gold); }
+.match-dialog .pred-chip--on {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.match-dialog .pred-chip--off {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.match-dialog .pred-chip--na {
+  background: var(--surface-2);
+  color: var(--muted);
+  opacity: 0.5;
+}
+.match-dialog .pred-chip svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+/* Nombres: mínimo 2 columnas; 3 cuando hay ancho (grid, no multicolumna,
+   para garantizar el piso de 2). */
+.match-dialog .pred-names {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 14px;
+
+  font-size: 12px;
+}
+@media (min-width: 460px) {
+  .match-dialog .pred-names {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.match-dialog .pred-names span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  padding: 1px 0;
+  color: var(--text);
+}
+.match-dialog .pred-names .is-self {
+  color: var(--gold);
+  font-weight: 700;
+}
 
 /* --- Captura manual de resultado (solo capturistas/superusers) --- */
 .record-form {

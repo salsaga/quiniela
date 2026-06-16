@@ -14,38 +14,55 @@ from typing import Sequence
 from django.templatetags.static import static
 
 from pool.models import Prediction, User
-from pool.services.scoring import ScoreDetail, score_detail
+from pool.services.scoring import ScoreDetail, result_chips, score_detail
 from pool.utils import format_day, format_time
 from tournament.models import Match, Stage
 
 
 def group_predictions(rows: list[dict]) -> list[dict]:
-    """Agrupa predicciones por diferencia de goles a favor del local.
+    """Agrupa por diferencia de goles y, dentro, por marcador exacto.
 
-    Grupos en orden descendente de diferencia (+3…0…−2); dentro de cada
-    grupo, suma de goles descendente (3-2 antes que 1-0). Ambos sorts
-    son estables, así que a igual suma se conserva el orden de entrada
-    (las vistas ya ordenan por nombre).
+    Grupos en orden descendente de diferencia (+3…0…−2). Cada grupo trae
+    un subgrupo por marcador exacto, ordenados por suma de goles
+    descendente (3-2 antes que 1-0); a igual diferencia, la suma es única
+    por marcador, así que el ``groupby`` los deja contiguos. Los nombres
+    conservan el orden de entrada (las vistas ya ordenan por nombre).
+    ``points``/``chips`` los llena ``build_match_dialog_payload`` (necesita
+    el marcador real).
     """
     ordered = sorted(rows, key=lambda r: r["home"] + r["away"], reverse=True)
     ordered = sorted(ordered, key=lambda r: r["home"] - r["away"],
                      reverse=True)
-    return [
-        {"diff": diff, "predictions": list(preds)}
-        for diff, preds in groupby(
-            ordered, key=lambda r: r["home"] - r["away"]
-        )
-    ]
+    groups = []
+    for diff, diff_rows in groupby(
+        ordered, key=lambda r: r["home"] - r["away"]
+    ):
+        subgroups = []
+        for (home, away), sub_rows in groupby(
+            diff_rows, key=lambda r: (r["home"], r["away"])
+        ):
+            names = [
+                {"name": r["name"], "is_self": r["is_self"]}
+                for r in sub_rows
+            ]
+            subgroups.append({"home": home, "away": away, "names": names,
+                              "points": None, "chips": None})
+        groups.append({"diff": diff, "subgroups": subgroups})
+    return groups
 
 
 def diff_label(diff: int, home: str, away: str) -> str:
-    """Encabezado de grupo: '{equipo} gana por {n} goles' o 'Empate'."""
+    """Encabezado de grupo: '+N gol(es)' o 'Empate'.
+
+    La bandera del equipo ganador la antepone el cliente (usa ``diff``);
+    la CSS lo pasa a mayúsculas → '🏴 +2 GOLES'.
+    """
     if diff == 0:
         return "Empate"
     team = home if diff > 0 else away
     n = abs(diff)
     unit = "gol" if n == 1 else "goles"
-    return f"{team} gana por {n} {unit}"
+    return f"{team}  +{n} {unit}"
 
 
 def points_display(detail: ScoreDetail | None) -> dict | None:
@@ -105,6 +122,7 @@ def _team_payload(team, placeholder: str) -> dict:
     return {
         "name": team.name_es,
         "flag": static(team.flag_path) if team.flag_path else None,
+        "fifa_code": team.fifa_code,
     }
 
 
@@ -174,25 +192,12 @@ def build_match_dialog_payload(
             .select_related("user")
             .order_by("user__first_name")
         )
-        finished_ids = {
-            m.id for m in matches
-            if m.status == "FINISHED"
-            and m.home_goals is not None and m.away_goals is not None
-        }
-        matches_by_id = {m.id: m for m in matches}
         for pred in predictions:
-            match = matches_by_id[pred.match_id]
-            detail = (
-                score_detail(pred.home_goals, pred.away_goals,
-                             match.home_goals, match.away_goals)
-                if pred.match_id in finished_ids else None
-            )
             rows_by_match[pred.match_id].append({
                 "name": pred.user.first_name or pred.user.email,
                 "home": pred.home_goals,
                 "away": pred.away_goals,
                 "is_self": pred.user_id == user.id,
-                "points": points_display(detail),
             })
 
     records = user.can_record_results or user.is_superuser
@@ -205,12 +210,24 @@ def build_match_dialog_payload(
         )
         payload = _match_payload(match, finished, records)
         if payload["revealed"]:
+            is_draw = finished and match.home_goals == match.away_goals
             groups = group_predictions(rows_by_match.get(match.id, []))
             for group in groups:
                 group["label"] = diff_label(
                     group["diff"],
-                    payload["home"]["name"], payload["away"]["name"],
+                    payload["home"]["fifa_code"], payload["away"]["fifa_code"],
                 )
+                if not finished:
+                    continue
+                # Mismo marcador en todo el subgrupo: el desglose se
+                # calcula una vez, no por persona.
+                for sub in group["subgroups"]:
+                    detail = score_detail(
+                        sub["home"], sub["away"],
+                        match.home_goals, match.away_goals,
+                    )
+                    sub["points"] = points_display(detail)
+                    sub["chips"] = result_chips(detail, is_draw)
             payload["groups"] = groups
         result.append(payload)
     return result

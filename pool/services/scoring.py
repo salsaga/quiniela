@@ -83,3 +83,22 @@ def calculate_points(
 ) -> int | None:
     detail = score_detail(pred_home, pred_away, actual_home, actual_away)
     return detail.points if detail else None
+
+
+def result_chips(detail: ScoreDetail, is_draw: bool) -> list[dict]:
+    """Tres chips de desglose (Resultado, Diferencia, Exacto).
+
+    ``state`` alimenta el color: ``on`` (punto ganado), ``off`` (no) o
+    ``na`` (no aplica: la diferencia nunca cuenta en empates). El exacto
+    incluye la diferencia, por eso enciende también su chip salvo empate.
+    Lo consumen la tarjeta (``<c-chip>``) y el dialog (lo pinta en JS).
+    """
+    diff_on = detail.diff_bonus or (detail.exact and not is_draw)
+    return [
+        {"label": "Res", "icon": "check",
+         "state": "on" if detail.points else "off"},
+        {"label": "Dif", "icon": "",
+         "state": "na" if is_draw else ("on" if diff_on else "off")},
+        {"label": "", "icon": "mira",
+         "state": "on" if detail.exact else "off"},
+    ]

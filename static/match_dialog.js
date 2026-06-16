@@ -34,6 +34,22 @@
     const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
     const RECORD_DELAY_MS = 105 * 60 * 1000;
 
+    /* Íconos de chips: los mismos SVG que <c-chip> en la tarjeta.
+       Estáticos (sin datos de usuario), por eso innerHTML es seguro. */
+    const CHIP_ICONS = {
+        check: '<svg viewBox="0 0 24 24" aria-hidden="true">'
+            + '<polyline points="4 13 10 19 20 6"/></svg>',
+        mira: '<svg viewBox="0 0 24 24" aria-hidden="true">'
+            + '<circle cx="12" cy="12" r="6"/>'
+            + '<line x1="12" y1="2" x2="12" y2="7"/>'
+            + '<line x1="12" y1="17" x2="12" y2="22"/>'
+            + '<line x1="2" y1="12" x2="7" y2="12"/>'
+            + '<line x1="17" y1="12" x2="22" y2="12"/></svg>',
+    };
+    const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+        + '<line x1="5" y1="5" x2="19" y2="19"/>'
+        + '<line x1="19" y1="5" x2="5" y2="19"/></svg>';
+
     /* el(tag, className, text): atajo para nodos hoja y contenedores. */
     function el(tag, className, text) {
         const node = document.createElement(tag);
@@ -139,20 +155,46 @@
         return cols;
     }
 
-    function predictionRow(pred) {
-        const li = el("li", pred.is_self ? "is-self" : null);
-        li.append(el("span", "rivals-name", pred.name));
-        li.append(el("span", "rivals-score",
-            `${pred.home} - ${pred.away}`));
-        const pts = el("span", "rivals-pts");
-        if (pred.points) {
-            pts.append(el("b", `day-points-val--${pred.points.kind}`,
-                String(pred.points.total)));
-        } else {
-            pts.textContent = "—";
+    function predChip(chip) {
+        const span = el("span", `pred-chip pred-chip--${chip.state}`);
+        const icon = CHIP_ICONS[chip.icon];
+        if (icon) span.innerHTML = icon;
+        else span.textContent = chip.label;
+        return span;
+    }
+
+    /* Un subgrupo = un marcador exacto. Arriba el marcador a la izquierda
+       y los nombres en columnas a la derecha; abajo, centrada, la línea
+       de puntos + 3 chips (solo si el partido terminó). */
+    function subgroupRow(sub) {
+        const row = el("div", "pred-sub");
+
+        const top = el("div", "pred-sub-top");
+        const result = el("div", "pred-sub-result");
+        // Spans (no "a - b") para controlar el espaciado del guión.
+        result.append(
+            el("span", null, String(sub.home)),
+            el("span", "pred-sub-dash", "-"),
+            el("span", null, String(sub.away)),
+        );
+        top.append(result);
+
+        const names = el("div", "pred-names");
+        for (const person of sub.names) {
+            names.append(el("span", person.is_self ? "is-self" : null,
+                person.name));
         }
-        li.append(pts);
-        return li;
+        top.append(names);
+        row.append(top);
+
+        if (sub.points) {
+            const evalLine = el("div", "pred-sub-eval");
+            evalLine.append(el("span", "pred-pts",
+                `${sub.points.total} pts`));
+            for (const chip of sub.chips) evalLine.append(predChip(chip));
+            row.append(evalLine);
+        }
+        return row;
     }
 
     /* --- Captura manual de resultado (can_record del payload) --- */
@@ -361,8 +403,9 @@
             return wrap;
         }
         for (const group of data.groups) {
-            const head = el("h6", "pred-group-head", group.label);
-            // Banderita del que gana en este grupo; en empate no hay.
+            const head = el("h6", "pred-group-head");
+            // Banderita del que gana en este grupo, antes del texto; en
+            // empate no hay.
             const flag = group.diff > 0 ? data.home.flag
                 : group.diff < 0 ? data.away.flag : null;
             if (flag) {
@@ -371,21 +414,42 @@
                 img.alt = "";
                 head.append(img);
             }
+            head.append(el("span", null, group.label));
             wrap.append(head);
-            const list = el("ul", "rivals-list");
-            for (const pred of group.predictions) {
-                list.append(predictionRow(pred));
+            for (const sub of group.subgroups) {
+                wrap.append(subgroupRow(sub));
             }
-            wrap.append(list);
         }
         return wrap;
     }
 
+    /* Bandera del equipo en el header (o su código/placeholder si aún no
+       hay bandera, p. ej. cruce sin definir). */
+    function headerFlag(team) {
+        if (team.flag) {
+            const img = document.createElement("img");
+            img.src = team.flag;
+            img.alt = team.name;
+            return img;
+        }
+        return el("span", "dialog-flag-ph", team.name);
+    }
+
+    /* Header: banderas a la izquierda, status al centro, cerrar a la
+       derecha (sustituye al botón "Cerrar" del footer). */
+    function dialogHeader(data) {
+        const flags = el("div", "dialog-flags");
+        flags.append(headerFlag(data.home), headerFlag(data.away));
+        const close = el("button", "dialog-close");
+        close.type = "button";
+        close.setAttribute("data-dialog-close", "");
+        close.setAttribute("aria-label", "Cerrar");
+        close.innerHTML = CLOSE_ICON;
+        return [flags, statusTag(data), close];
+    }
+
     function open(data) {
-        title.replaceChildren(
-            el("span", null, `${data.home.name} vs ${data.away.name}`),
-            statusTag(data)
-        );
+        title.replaceChildren(...dialogHeader(data));
         body.replaceChildren(detailsSection(data));
         if (data.finished) body.append(finishedSection(data));
         if (data.can_record
