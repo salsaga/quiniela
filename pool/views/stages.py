@@ -77,7 +77,7 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
 
     Fase de grupos: una sección por grupo (A→L). Eliminatoria: una sola
     sección (lista plana, equipos aún como placeholder). Cada sección es
-    ``{"key", "label", "matches", "filled", "total", "points", "complete",
+    ``{"key", "label", "matches", "filled", "total", "points",
     "teams", "standings"}`` (``teams`` y ``standings`` solo agrupando por
     grupo: banderas del encabezado en el orden de la variante mix y tablas
     de posiciones en tres variantes), donde ``filled`` cuenta los partidos
@@ -103,7 +103,6 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
     grouped: dict[SectionKey, list[Match]] = defaultdict(list)
     filled: dict[SectionKey, int] = defaultdict(int)
     points: dict[SectionKey, int] = defaultdict(int)
-    finished_count: dict[SectionKey, int] = defaultdict(int)
     teams: dict[SectionKey, dict[int, Team]] = defaultdict(dict)
     for match in matches:
         local_dt = match.datetime + timedelta(
@@ -120,8 +119,6 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
         annotate_result(match, prediction)
         if match.user_points is not None:
             points[key] += match.user_points
-        if match.is_finished:
-            finished_count[key] += 1
         grouped[key].append(match)
         # Equipos del grupo para el encabezado (sin query extra).
         if is_group:
@@ -141,9 +138,6 @@ def render_stage_sections(user: User, stage: Stage) -> list[dict]:
             "filled": filled[key],
             "total": len(grouped[key]),
             "points": points[key],
-            # Grupo cerrado: sus 6 partidos ya terminaron. La variante
-            # "real" oculta banderas/equipos derivados si no lo está.
-            "complete": finished_count[key] == len(grouped[key]),
             "standings": standings.get(key),
             "teams": (
                 standings[key].teams if key in standings

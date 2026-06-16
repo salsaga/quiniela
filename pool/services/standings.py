@@ -36,7 +36,7 @@ class StandingRow:
     @property
     def sort_key(self) -> tuple:
         # FIFA simplificado: Pts, DG, GF, fair play (menos rojas,
-        # luego menos amarillas) y nombre; sin head-to-head.
+        # luego menos amarillas); sin head-to-head.
         return (-self.points, -self.goal_diff, -self.goals_for,
                 self.red, self.yellow)
 

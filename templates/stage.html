@@ -51,7 +51,7 @@
                            group-open:rotate-90" />
             {{ section.label }}
             {# group-flags: hook de standings.js (reordena por style.order) #}
-            {% if section.teams %}<span class="group-flags ml-10 inline-flex items-center gap-1 transition-opacity duration-300 group-open:opacity-40" data-complete="{{ section.complete|yesno:'1,0' }}">{% for team in section.teams %}{% if team.flag_path %}<img class="h-[18px] w-auto max-w-[26px] rounded-sm" src="{% static team.flag_path %}" alt="{{ team.name_es }}" title="{{ team.name_es }}" data-order-est="{{ team.order_est }}" data-order-mix="{{ team.order_mix }}" data-order-real="{{ team.order_real }}">{% endif %}{% endfor %}</span>{% endif %}
+            {% if section.teams %}<span class="group-flags ml-10 inline-flex items-center gap-1 transition-opacity duration-300 group-open:opacity-40">{% for team in section.teams %}{% if team.flag_path %}<img class="h-[18px] w-auto max-w-[26px] rounded-sm" src="{% static team.flag_path %}" alt="{{ team.name_es }}" title="{{ team.name_es }}" data-order-est="{{ team.order_est }}" data-order-mix="{{ team.order_mix }}" data-order-real="{{ team.order_real }}">{% endif %}{% endfor %}</span>{% endif %}
             <c-section-count state="{{ state }}" points="{{ section.points }}"
                              filled="{{ section.filled }}"
                              total="{{ section.total }}" />

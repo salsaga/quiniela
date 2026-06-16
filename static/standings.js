@@ -2,10 +2,11 @@
  *
  * Hay un nav por grupo; todos comparten una sola elección, así que al
  * tocar cualquiera se sincronizan los demás. Las 3 variantes vienen
- * server-rendered: aquí solo se conmuta `hidden`, se reordenan las
- * banderas del header (style.order; .group-flags es inline-flex) y, en
- * variante "real", se ocultan las banderas de los grupos aún no cerrados
- * (data-complete="0"). La elección persiste en localStorage. */
+ * server-rendered: aquí solo se conmuta `hidden` y se reordenan las
+ * banderas del header (style.order; .group-flags es inline-flex). Las
+ * banderas siempre se muestran: el orden viene de la base de datos
+ * (cabeza de grupo primero, nunca alfabético), incluso si el grupo aún
+ * no tiene partidos jugados. La elección persiste en localStorage. */
 
 (function () {
     const navs = document.querySelectorAll("[data-standings-switch]");
