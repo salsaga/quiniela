@@ -221,11 +221,59 @@
 .dialog-x:hover {
   color: var(--text);
 }
-/* El board ya es una "tarjeta" con su propio borde; dentro del Dialog eso
-   se duplica con el armazón del modal. Se aplana para no repetir borde ni
-   padding. */
+/* El board ES el cuerpo del diálogo: sin padding de body ni tarjeta interna.
+   El armazón dorado del <dialog> hace de marco. Para ensancharlo hay que
+   vencer el max-width que el navegador (UA stylesheet) le pone por defecto
+   al <dialog> modal (~viewport−38px); con solo `width` no crece. */
+#leaderboard-dialog {
+  width: min(600px, 96vw);
+  max-width: 96vw;
+
+  /* Animación tipo aside: entra deslizando desde la derecha + fade.
+     Modelo moderno de <dialog>: @starting-style anima la entrada y
+     allow-discrete en display/overlay hace que la salida también anime.
+     Navegadores sin soporte abren/cierran sin animar (degradación limpia). */
+  opacity: 0;
+  transform: translateX(0);
+  /* Sin allow-discrete en display/overlay: solo anima la ENTRADA (vía
+     @starting-style); al cerrar, el <dialog> pasa a display:none al
+     instante, sin animación de salida. */
+  transition:
+    opacity 360ms ease,
+    transform 520ms cubic-bezier(.22, .61, .36, 1);
+}
+#leaderboard-dialog[open] {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* Solo la entrada desliza, desde la izquierda. */
+@starting-style {
+  #leaderboard-dialog[open] {
+    opacity: 0;
+    transform: translateX(-56px);
+  }
+}
+/* El backdrop acompaña con su propio fade. */
+#leaderboard-dialog::backdrop {
+  opacity: 0;
+  transition: opacity 360ms ease;
+}
+#leaderboard-dialog[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  #leaderboard-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #leaderboard-dialog,
+  #leaderboard-dialog::backdrop {
+    transition: none;
+  }
+}
 #leaderboard-dialog .send-dialog-body {
-  padding: 8px 10px;
+  padding: 0;
 }
 #leaderboard-dialog .board {
   max-width: none;
